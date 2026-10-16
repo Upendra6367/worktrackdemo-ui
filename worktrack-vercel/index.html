@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkTrack — Employee Productivity Tool</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F9F8F7;
+    --surface: #FFFFFF;
+    --border: #E6E5E3;
+    --text: #2C2C2B;
+    --muted: #7D7A75;
+    --blue: #2783DE;
+    --blue-soft: #E5F2FC;
+    --green: #46A171;
+    --green-soft: #E8F1EC;
+    --orange: #D5803B;
+    --orange-soft: #FBEBDE;
+    --red: #E56458;
+    --red-soft: #FCE9E7;
+    --purple: #8B5CF6;
+    --purple-soft: #EDE9FE;
+    --radius: 8px;
+    --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.04);
+    --sidebar-w: 220px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ── LOGIN ── */
+  #login { align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+  .login-card { background: var(--surface); border-radius: 16px; padding: 48px 40px; width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+  .login-logo .logo-icon { width: 40px; height: 40px; background: var(--blue); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 18px; }
+  .login-logo span { font-size: 20px; font-weight: 700; color: var(--text); }
+  .login-card h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+  .login-card p { color: var(--muted); font-size: 13px; margin-bottom: 28px; }
+  .role-tabs { display: flex; background: var(--bg); border-radius: var(--radius); padding: 3px; margin-bottom: 24px; gap: 3px; }
+  .role-tab { flex: 1; text-align: center; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--muted); border: none; background: none; }
+  .role-tab.active { background: var(--surface); color: var(--blue); box-shadow: var(--shadow); }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 14px; outline: none; transition: border-color .2s; }
+  .form-group input:focus { border-color: var(--blue); }
+  .btn-primary { width: 100%; padding: 12px; background: var(--blue); color: #fff; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: opacity .2s; }
+  .btn-primary:hover { opacity: .9; }
+  .login-footer { margin-top: 20px; text-align: center; font-size: 12px; color: var(--muted); }
+
+  /* ── APP LAYOUT ── */
+  #app, #annotator { flex-direction: row; }
+  .sidebar { width: var(--sidebar-w); background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 16px 0; flex-shrink: 0; }
+  .sidebar-logo { display: flex; align-items: center; gap: 8px; padding: 4px 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .sidebar-logo .logo-icon { width: 32px; height: 32px; background: var(--blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px; }
+  .sidebar-logo span { font-size: 15px; font-weight: 700; }
+  .sidebar-section { padding: 4px 12px; margin-bottom: 4px; }
+  .sidebar-section-label { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; padding: 0 8px; margin-bottom: 4px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 500; transition: all .15s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: var(--blue-soft); color: var(--blue); font-weight: 600; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+  .sidebar-user { margin-top: auto; padding: 16px 12px 4px; border-top: 1px solid var(--border); }
+  .user-card { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 8px; cursor: pointer; }
+  .user-card:hover { background: var(--bg); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--blue); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+  .avatar.green { background: var(--green); }
+  .avatar.orange { background: var(--orange); }
+  .user-info { flex: 1; min-width: 0; }
+  .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { font-size: 11px; color: var(--muted); }
+
+  /* ── MAIN CONTENT ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { display: flex; align-items: center; padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--border); gap: 16px; flex-shrink: 0; }
+  .topbar-title { font-size: 17px; font-weight: 700; flex: 1; }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .btn { padding: 7px 14px; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); display: flex; align-items: center; gap: 6px; transition: all .15s; }
+  .btn:hover { background: var(--bg); }
+  .btn-blue { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .btn-blue:hover { opacity: .9; background: var(--blue); }
+  .btn-green { background: var(--green); color: #fff; border-color: var(--green); }
+  .btn-red { background: var(--red); color: #fff; border-color: var(--red); }
+  .sync-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); background: var(--green-soft); padding: 5px 10px; border-radius: 20px; }
+  .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* ── PAGE SECTIONS ── */
+  .page-section { display: none; }
+  .page-section.active { display: block; }
+
+  /* ── STAT CARDS ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); }
+  .stat-label { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .stat-change { font-size: 12px; display: flex; align-items: center; gap: 4px; }
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+  .stat-icon { float: right; margin-top: -4px; font-size: 24px; opacity: .15; }
+
+  /* ── CHARTS ── */
+  .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); }
+  .chart-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .chart-card h3 span { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+  .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .bar { border-radius: 4px 4px 0 0; width: 100%; transition: opacity .2s; }
+  .bar:hover { opacity: .8; }
+  .bar-label { font-size: 10px; color: var(--muted); text-align: center; }
+  .donut-wrap { display: flex; align-items: center; gap: 20px; }
+  .donut { width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(var(--green) 0deg 216deg, var(--red) 216deg 288deg, var(--orange) 288deg 360deg); position: relative; flex-shrink: 0; }
+  .donut::after { content:''; position: absolute; inset: 22px; background: var(--surface); border-radius: 50%; }
+  .donut-legend { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── TABLES ── */
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 24px; overflow: hidden; }
+  .table-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .table-header h3 { font-size: 14px; font-weight: 700; }
+  .search-input { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 13px; outline: none; width: 200px; }
+  .search-input:focus { border-color: var(--blue); }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--bg); padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 12px 16px; border-top: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  tr:hover td { background: #FAFAF9; }
+  .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: var(--green-soft); color: var(--green); }
+  .badge-red { background: var(--red-soft); color: var(--red); }
+  .badge-orange { background: var(--orange-soft); color: var(--orange); }
+  .badge-blue { background: var(--blue-soft); color: var(--blue); }
+  .badge-purple { background: var(--purple-soft); color: var(--purple); }
+  .badge-gray { background: var(--bg); color: var(--muted); }
+  .progress-bar-wrap { background: var(--border); border-radius: 4px; height: 6px; width: 80px; }
+  .progress-bar { height: 100%; border-radius: 4px; background: var(--blue); }
+  .progress-bar.green { background: var(--green); }
+  .progress-bar.orange { background: var(--orange); }
+  .progress-bar.red { background: var(--red); }
+  .avatar-sm { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 10px; }
+  .flex-center { display: flex; align-items: center; gap: 8px; }
+
+  /* ── ALERTS ── */
+  .alert-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .alert-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
+  .alert-item.warn { border-left: 3px solid var(--orange); }
+  .alert-item.error { border-left: 3px solid var(--red); }
+  .alert-icon { font-size: 18px; }
+  .alert-content { flex: 1; }
+  .alert-title { font-size: 13px; font-weight: 600; }
+  .alert-sub { font-size: 12px; color: var(--muted); }
+  .alert-time { font-size: 11px; color: var(--muted); }
+
+  /* ── FILTER BAR ── */
+  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+  select { padding: 7px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 13px; background: var(--surface); color: var(--text); outline: none; cursor: pointer; }
+  select:focus { border-color: var(--blue); }
+  .period-tabs { display: flex; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .period-tab { padding: 6px 14px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--muted); }
+  .period-tab.active { background: var(--blue); color: #fff; }
+
+  /* ── ATTENDANCE ── */
+  .attend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .clock-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); text-align: center; }
+  .clock-time { font-size: 48px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .clock-date { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+  .clock-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .timeline { display: flex; flex-direction: column; gap: 8px; }
+  .timeline-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .timeline-dot.green { background: var(--green); }
+  .timeline-dot.orange { background: var(--orange); }
+  .timeline-dot.blue { background: var(--blue); }
+  .timeline-dot.red { background: var(--red); }
+  .timeline-text { flex: 1; font-size: 13px; }
+  .timeline-time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ── TAT ── */
+  .tat-bar { height: 8px; border-radius: 4px; background: var(--border); margin-top: 6px; overflow: hidden; }
+  .tat-fill { height: 100%; border-radius: 4px; }
+  .tat-fill.ok { background: var(--green); }
+  .tat-fill.warn { background: var(--orange); }
+  .tat-fill.over { background: var(--red); }
+
+  /* ── NOTIFICATION PANEL ── */
+  .notif-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -4px 0 20px rgba(0,0,0,.1); transform: translateX(100%); transition: transform .25s; z-index: 100; display: flex; flex-direction: column; }
+  .notif-panel.open { transform: none; }
+  .notif-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .notif-header h3 { font-size: 16px; font-weight: 700; }
+  .notif-close { cursor: pointer; font-size: 18px; color: var(--muted); border: none; background: none; }
+  .notif-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .notif-item { padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .notif-item.unread { background: var(--blue-soft); border-color: #c5dff6; }
+  .notif-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .notif-msg { font-size: 12px; color: var(--muted); }
+  .notif-time { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* ── BREAK TIMER ── */
+  .break-widget { background: var(--orange-soft); border: 1.5px solid var(--orange); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .break-timer { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--orange); }
+  .break-info { flex: 1; }
+  .break-title { font-size: 13px; font-weight: 700; color: var(--orange); }
+  .break-sub { font-size: 12px; color: var(--muted); }
+
+  /* ── EMPTY STATE ── */
+  .empty { text-align: center; padding: 48px; color: var(--muted); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty h3 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+
+  /* ── TAB BAR (within pages) ── */
+  .tab-bar { display: flex; gap: 2px; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+  .tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 600; }
+
+  /* ── RESPONSIVE SCREENS ── */
+  .screen-label { display: inline-block; background: var(--purple-soft); color: var(--purple); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; margin-bottom: 16px; }
+
+  /* ── ANNOTATOR ATTENDANCE WIDGET ── */
+  .my-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+  .my-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+  .my-stat-val { font-size: 22px; font-weight: 700; }
+  .my-stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1: LOGIN
+══════════════════════════════════════ -->
+<div id="login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">W</div>
+      <span>WorkTrack</span>
+    </div>
+    <h2>Welcome back</h2>
+    <p>Sign in to your workspace</p>
+    <div class="role-tabs">
+      <button class="role-tab active" onclick="setRole(this,'Admin')">Admin</button>
+      <button class="role-tab" onclick="setRole(this,'Annotator')">Annotator</button>
+    </div>
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" placeholder="admin@company.com" value="admin@company.com">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" placeholder="••••••••" value="password">
+    </div>
+    <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In as Admin</button>
+    <div class="login-footer">Secure login · Role-based access control</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2: ADMIN DASHBOARD
+══════════════════════════════════════ -->
+<div id="app" class="screen">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">W</div>
+      <span>WorkTrack</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Overview</div>
+      <button class="nav-item active" onclick="showPage('dashboard',this)">
+        <span class="nav-icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" onclick="showPage('tasks',this)">
+        <span class="nav-icon">✅</span> Tasks
+        <span class="nav-badge">7</span>
+      </button>
+      <button class="nav-item" onclick="showPage('attendance',this)">
+        <span class="nav-icon">🕐</span> Attendance
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Reports</div>
+      <button class="nav-item" onclick="showPage('productivity',this)">
+        <span class="nav-icon">📈</span> Productivity
+      </button>
+      <button class="nav-item" onclick="showPage('quality',this)">
+        <span class="nav-icon">🎯</span> Quality
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Manage</div>
+      <button class="nav-item" onclick="showPage('projects',this)">
+        <span class="nav-icon">📁</span> Projects
+      </button>
+      <button class="nav-item" onclick="showPage('employees',this)">
+        <span class="nav-icon">👥</span> Employees
+      </button>
+      <button class="nav-item" onclick="showPage('alerts',this)">
+        <span class="nav-icon">🔔</span> Alerts
+        <span class="nav-badge">3</span>
+      </button>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-card">
+        <div class="avatar">SA</div>
+        <div class="user-info">
+          <div class="user-name">Sarah Admin</div>
+          <div class="user-role">Administrator</div>
+        </div>
+      </div>
+      <button class="nav-item" style="margin-top:4px" onclick="showScreen('login')">
+        <span class="nav-icon">🚪</span> Sign Out
+      </button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="sync-status"><div class="sync-dot"></div>Synced with Google Sheets · 2 min ago</div>
+        <button class="btn" onclick="toggleNotif()">🔔 <span id="notifCount" style="background:var(--red);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px">3</span></button>
+        <button class="btn btn-blue">+ New Task</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page-section active">
+        <div class="filter-bar">
+          <div class="period-tabs">
+            <button class="period-tab active">Today</button>
+            <button class="period-tab">Weekly</button>
+            <button class="period-tab">Monthly</button>
+            <button class="period-tab">Custom</button>
+          </div>
+          <select><option>All Projects</option><option>Video Annotation Alpha</option><option>Dataset Beta</option></select>
+          <select><option>All Annotators</option><option>Priya Sharma</option><option>Rajan Kumar</option></select>
+          <button class="btn">⬇ Export</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-label">Active Employees</div>
+            <div class="stat-value" style="color:var(--blue)">24</div>
+            <div class="stat-change up">↑ 2 this week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-label">Tasks Completed</div>
+            <div class="stat-value" style="color:var(--green)">348</div>
+            <div class="stat-change up">↑ 12% vs last week</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-label">Pending Tasks</div>
+            <div class="stat-value" style="color:var(--orange)">57</div>
+            <div class="stat-change down">↓ 7 overdue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-label">Avg Approval Rate</div>
+            <div class="stat-value" style="color:var(--green)">87%</div>
+            <div class="stat-change up">↑ 3% this month</div>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>Daily Task Completion <span>This Week</span></h3>
+            <div class="bar-chart">
+              <div class="bar-group"><div class="bar" style="height:60%;background:var(--blue)"></div><div class="bar-label">Mon<br>52</div></div>
+              <div class="bar-group"><div class="bar" style="height:75%;background:var(--blue)"></div><div class="bar-label">Tue<br>67</div></div>
+              <div class="bar-group"><div class="bar" style="height:50%;background:var(--blue)"></div><div class="bar-label">Wed<br>44</div></div>
+              <div class="bar-group"><div class="bar" style="height:90%;background:var(--blue)"></div><div class="bar-label">Thu<br>80</div></div>
+              <div class="bar-group"><div class="bar" style="height:70%;background:var(--blue)"></div><div class="bar-label">Fri<br>62</div></div>
+              <div class="bar-group"><div class="bar" style="height:35%;background:var(--border)"></div><div class="bar-label">Sat<br>—</div></div>
+              <div class="bar-group"><div class="bar" style="height:20%;background:var(--border)"></div><div class="bar-label">Sun<br>—</div></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Task Status Split</h3>
+            <div class="donut-wrap">
+              <div class="donut"></div>
+              <div class="donut-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Approved <strong>60%</strong></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Rejected <strong>20%</strong></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Pending <strong>20%</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Top Annotator Performance</h3>
+            <input class="search-input" placeholder="🔍  Search employee...">
+          </div>
+          <table>
+            <thead><tr><th>Annotator</th><th>Tasks Done</th><th>Approved</th><th>Rejected</th><th>Avg Time/Task</th><th>TAT Compliance</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div class="flex-center"><div class="avatar-sm" style="background:var(--blue)">PS</div>Priya Sharma</div></td>
+                <td>84</td><td><span class="badge badge-green">76</span></td><td><span class="badge badge-red">8</span></td>
+                <td>23 min</td>
+                <td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar green" style="width:92%"></div></div>92%</div></td>
+                <td><span class="badge badge-green">On Track</span></td>
+              </tr>
+              <tr>
+                <td><div class="flex-center"><div class="avatar-sm" style="background:var(--orange)">RK</div>Rajan Kumar</div></td>
+                <td>71</td><td><span class="badge badge-green">59</span></td><td><span class="badge badge-red">12</span></td>
+                <td>31 min</td>
+                <td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar orange" style="width:78%"></div></div>78%</div></td>
+                <td><span class="badge badge-orange">At Risk</span></td>
+              </tr>
+              <tr>
+                <td><div class="flex-center"><div class="avatar-sm" style="background:var(--green)">AM</div>Anita Mehra</div></td>
+                <td>62</td><td><span class="badge badge-green">57</span></td><td><span class="badge badge-red">5</span></td>
+                <td>19 min</td>
+                <td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar green" style="width:97%"></div></div>97%</div></td>
+                <td><span class="badge badge-green">On Track</span></td>
+              </tr>
+              <tr>
+                <td><div class="flex-center"><div class="avatar-sm" style="background:var(--red)">VJ</div>Vijay Joshi</div></td>
+                <td>48</td><td><span class="badge badge-green">34</span></td><td><span class="badge badge-red">14</span></td>
+                <td>42 min</td>
+                <td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar red" style="width:58%"></div></div>58%</div></td>
+                <td><span class="badge badge-red">Overdue</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TASKS -->
+      <div id="page-tasks" class="page-section">
+        <div class="filter-bar">
+          <select><option>All Statuses</option><option>Labelling</option><option>Labelling Done</option><option>Submitted</option><option>Approved</option><option>Rejected</option><option>Hold</option><option>Rework Done</option></select>
+          <select><option>All Projects</option><option>Video Annotation Alpha</option><option>Dataset Beta</option></select>
+          <select><option>All Annotators</option><option>Priya Sharma</option><option>Rajan Kumar</option></select>
+          <input class="search-input" placeholder="🔍  Search Dataset ID...">
+          <button class="btn btn-blue">+ Import from Sheets</button>
+          <button class="btn">⬇ Export CSV</button>
+        </div>
+        <div class="alert-list">
+          <div class="alert-item error">
+            <span class="alert-icon">⚠️</span>
+            <div class="alert-content">
+              <div class="alert-title">Duplicate Dataset ID Detected</div>
+              <div class="alert-sub">DS-2041 assigned to both Priya Sharma and Rajan Kumar · Project: Video Annotation Alpha</div>
+            </div>
+            <span class="alert-time">5 min ago</span>
+          </div>
+          <div class="alert-item warn">
+            <span class="alert-icon">🕐</span>
+            <div class="alert-content">
+              <div class="alert-title">TAT Exceeded — DS-1987</div>
+              <div class="alert-sub">Status: Labelling Done · Exceeded TAT by 3h 20min · Reviewer: Kiran Patel</div>
+            </div>
+            <span class="alert-time">1h ago</span>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-header">
+            <h3>All Tasks</h3>
+            <div style="display:flex;gap:8px">
+              <input class="search-input" placeholder="🔍  Search...">
+              <button class="btn">⚙ Columns</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Dataset ID</th><th>Annotator</th><th>Reviewer</th><th>Assigned</th><th>Submitted</th><th>Approved</th><th>Rejected</th><th>Time</th><th>Status</th><th>TAT</th></tr></thead>
+            <tbody>
+              <tr><td><strong>DS-2048</strong></td><td><div class="flex-center"><div class="avatar-sm" style="background:var(--blue)">PS</div>Priya S.</div></td><td>Kiran P.</td><td>Oct 14</td><td>Oct 15</td><td style="color:var(--green)">142</td><td style="color:var(--red)">8</td><td>22 min</td><td><span class="badge badge-green">Approved</span></td><td><span class="badge badge-green">✓ On time</span></td></tr>
+              <tr><td><strong>DS-2047</strong></td><td><div class="flex-center"><div class="avatar-sm" style="background:var(--orange)">RK</div>Rajan K.</div></td><td>Sneha R.</td><td>Oct 14</td><td>—</td><td style="color:var(--green)">—</td><td>—</td><td>—</td><td><span class="badge badge-blue">Labelling</span></td><td><span class="badge badge-orange">⚠ 2h left</span></td></tr>
+              <tr><td><strong>DS-2041</strong></td><td><div class="flex-center"><div class="avatar-sm" style="background:var(--red)">VJ</div>Vijay J.</div></td><td>Kiran P.</td><td>Oct 13</td><td>Oct 14</td><td>—</td><td>—</td><td>41 min</td><td><span class="badge badge-orange">Hold</span></td><td><span class="badge badge-red">✗ Exceeded</span></td></tr>
+              <tr><td><strong>DS-2038</strong></td><td><div class="flex-center"><div class="avatar-sm" style="background:var(--green)">AM</div>Anita M.</div></td><td>Sneha R.</td><td>Oct 13</td><td>Oct 13</td><td style="color:var(--green)">198</td><td style="color:var(--red)">2</td><td>18 min</td><td><span class="badge badge-green">Review Done</span></td><td><span class="badge badge-green">✓ On time</span></td></tr>
+              <tr><td><strong>DS-2035</strong></td><td><div class="flex-center"><div class="avatar-sm" style="background:var(--blue)">PS</div>Priya S.</div></td><td>Kiran P.</td><td>Oct 12</td><td>Oct 13</td><td>—</td><td style="color:var(--red)">31</td><td>35 min</td><td><span class="badge badge-red">Rejected</span></td><td><span class="badge badge-red">✗ Exceeded</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE -->
+      <div id="page-attendance" class="page-section">
+        <div class="filter-bar">
+          <div class="period-tabs">
+            <button class="period-tab active">Daily</button>
+            <button class="period-tab">Weekly</button>
+            <button class="period-tab">Monthly</button>
+            <button class="period-tab">Custom</button>
+          </div>
+          <select><option>All Employees</option><option>Priya Sharma</option><option>Rajan Kumar</option></select>
+          <button class="btn">⬇ Export Attendance Sheet</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-label">Present Today</div><div class="stat-value" style="color:var(--green)">21</div><div class="stat-change up">↑ Full day: 18, Half day: 3</div></div>
+          <div class="stat-card"><div class="stat-label">On Leave</div><div class="stat-value" style="color:var(--orange)">2</div><div class="stat-change">Approved leaves</div></div>
+          <div class="stat-card"><div class="stat-label">Avg Working Hours</div><div class="stat-value" style="color:var(--blue)">7.4h</div><div class="stat-change up">↑ Excl. break time</div></div>
+          <div class="stat-card"><div class="stat-label">Total Break Time</div><div class="stat-value" style="color:var(--muted)">38m</div><div class="stat-change">Avg per employee</div></div>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>Today's Attendance Log</h3><input class="search-input" placeholder="🔍  Search..."></div>
+          <table>
+            <thead><tr><th>Employee</th><th>Login</th><th>Logout</th><th>Working Hours</th><th>Break Time</th><th>Attendance Type</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--blue)">PS</div>Priya Sharma</div></td><td>09:02 AM</td><td>—</td><td>5h 48m</td><td>22m (2 breaks)</td><td><span class="badge badge-blue">Full Day</span></td><td><span class="badge badge-green">Active</span></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--orange)">RK</div>Rajan Kumar</div></td><td>09:45 AM</td><td>—</td><td>5h 05m</td><td>35m (3 breaks)</td><td><span class="badge badge-blue">Full Day</span></td><td><span class="badge badge-orange">On Break</span></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--green)">AM</div>Anita Mehra</div></td><td>08:55 AM</td><td>01:30 PM</td><td>4h 35m</td><td>15m (1 break)</td><td><span class="badge badge-purple">Half Day</span></td><td><span class="badge badge-gray">Logged Out</span></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--red)">VJ</div>Vijay Joshi</div></td><td colspan="5" style="color:var(--muted);font-style:italic">On approved full-day leave</td><td><span class="badge badge-orange">Leave</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PRODUCTIVITY -->
+      <div id="page-productivity" class="page-section">
+        <div class="filter-bar">
+          <div class="period-tabs">
+            <button class="period-tab active">Daily</button>
+            <button class="period-tab">Weekly</button>
+            <button class="period-tab">Monthly</button>
+            <button class="period-tab">Custom</button>
+          </div>
+          <select><option>All Projects</option><option>Video Annotation Alpha</option></select>
+          <select><option>All Annotators</option><option>Priya Sharma</option></select>
+          <button class="btn">⬇ Export Report</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-label">Tasks Assigned</div><div class="stat-value">405</div></div>
+          <div class="stat-card"><div class="stat-label">Tasks Completed</div><div class="stat-value" style="color:var(--green)">348</div></div>
+          <div class="stat-card"><div class="stat-label">Total Approved Objects</div><div class="stat-value" style="color:var(--green)">14,820</div></div>
+          <div class="stat-card"><div class="stat-label">Avg Time / Task</div><div class="stat-value">26m</div></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>Productivity Trend <span>Last 7 Days</span></h3>
+            <div class="bar-chart">
+              <div class="bar-group"><div class="bar" style="height:55%;background:#5E9FE8"></div><div class="bar-label">Mon<br>48</div></div>
+              <div class="bar-group"><div class="bar" style="height:70%;background:#5E9FE8"></div><div class="bar-label">Tue<br>62</div></div>
+              <div class="bar-group"><div class="bar" style="height:60%;background:#5E9FE8"></div><div class="bar-label">Wed<br>53</div></div>
+              <div class="bar-group"><div class="bar" style="height:85%;background:#5E9FE8"></div><div class="bar-label">Thu<br>75</div></div>
+              <div class="bar-group"><div class="bar" style="height:75%;background:#5E9FE8"></div><div class="bar-label">Fri<br>66</div></div>
+              <div class="bar-group"><div class="bar" style="height:30%;background:var(--border)"></div><div class="bar-label">Sat<br>—</div></div>
+              <div class="bar-group"><div class="bar" style="height:15%;background:var(--border)"></div><div class="bar-label">Sun<br>—</div></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>TAT Compliance</h3>
+            <div style="margin-top:8px">
+              <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Within TAT</span><strong style="color:var(--green)">82%</strong></div>
+                <div class="tat-bar"><div class="tat-fill ok" style="width:82%"></div></div>
+              </div>
+              <div style="margin-bottom:12px">
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Near deadline</span><strong style="color:var(--orange)">11%</strong></div>
+                <div class="tat-bar"><div class="tat-fill warn" style="width:11%"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Exceeded TAT</span><strong style="color:var(--red)">7%</strong></div>
+                <div class="tat-bar"><div class="tat-fill over" style="width:7%"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>Employee Productivity Comparison</h3></div>
+          <table>
+            <thead><tr><th>Annotator</th><th>Assigned</th><th>Completed</th><th>Pending</th><th>Approved Objects</th><th>Rejected Objects</th><th>Avg Time</th><th>Productivity Score</th></tr></thead>
+            <tbody>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--blue)">PS</div>Priya Sharma</div></td><td>84</td><td>84</td><td>0</td><td style="color:var(--green)">3,560</td><td style="color:var(--red)">210</td><td>23 min</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar green" style="width:94%"></div></div><strong>94</strong></div></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--green)">AM</div>Anita Mehra</div></td><td>62</td><td>62</td><td>0</td><td style="color:var(--green)">2,980</td><td style="color:var(--red)">120</td><td>19 min</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar green" style="width:97%"></div></div><strong>97</strong></div></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--orange)">RK</div>Rajan Kumar</div></td><td>78</td><td>71</td><td>7</td><td style="color:var(--green)">2,840</td><td style="color:var(--red)">480</td><td>31 min</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar orange" style="width:72%"></div></div><strong>72</strong></div></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--red)">VJ</div>Vijay Joshi</div></td><td>55</td><td>48</td><td>7</td><td style="color:var(--green)">1,820</td><td style="color:var(--red)">640</td><td>42 min</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar red" style="width:54%"></div></div><strong>54</strong></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- QUALITY -->
+      <div id="page-quality" class="page-section">
+        <div class="filter-bar">
+          <div class="period-tabs"><button class="period-tab active">Monthly</button><button class="period-tab">Weekly</button><button class="period-tab">Custom</button></div>
+          <select><option>All Projects</option><option>Video Annotation Alpha</option></select>
+          <button class="btn">⬇ Export Quality Report</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-label">Total Submitted</div><div class="stat-value">11,220</div></div>
+          <div class="stat-card"><div class="stat-label">Total Approved</div><div class="stat-value" style="color:var(--green)">9,762</div><div class="stat-change up">↑ 87% approval rate</div></div>
+          <div class="stat-card"><div class="stat-label">Total Rejected</div><div class="stat-value" style="color:var(--red)">1,458</div><div class="stat-change down">↓ 13% rejection rate</div></div>
+          <div class="stat-card"><div class="stat-label">Rework Count</div><div class="stat-value" style="color:var(--orange)">342</div></div>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>Annotator Quality Breakdown</h3></div>
+          <table>
+            <thead><tr><th>Annotator</th><th>Submitted</th><th>Approved</th><th>Rejected</th><th>Approval Rate</th><th>Rework Count</th><th>Quality Grade</th></tr></thead>
+            <tbody>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--green)">AM</div>Anita Mehra</div></td><td>2,980</td><td>2,890</td><td>90</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar green" style="width:97%"></div></div>97%</div></td><td>18</td><td><span class="badge badge-green">A+</span></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--blue)">PS</div>Priya Sharma</div></td><td>3,560</td><td>3,350</td><td>210</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar green" style="width:94%"></div></div>94%</div></td><td>62</td><td><span class="badge badge-green">A</span></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--orange)">RK</div>Rajan Kumar</div></td><td>2,840</td><td>2,360</td><td>480</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar orange" style="width:83%"></div></div>83%</div></td><td>148</td><td><span class="badge badge-orange">B</span></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--red)">VJ</div>Vijay Joshi</div></td><td>1,820</td><td>1,180</td><td>640</td><td><div class="flex-center"><div class="progress-bar-wrap"><div class="progress-bar red" style="width:65%"></div></div>65%</div></td><td>114</td><td><span class="badge badge-red">C</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PROJECTS -->
+      <div id="page-projects" class="page-section">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;gap:10px">
+          <button class="btn btn-blue">+ New Project</button>
+          <button class="btn">🔗 Link Google Sheet</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+          <div class="chart-card" style="cursor:pointer">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+              <div>
+                <div style="font-size:16px;font-weight:700">Video Annotation Alpha</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">3 annotators · 2 reviewers</div>
+              </div>
+              <span class="badge badge-green">Active</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">🔗 Linked: annotations_alpha.xlsx</div>
+            <div style="margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Progress</span><span>348/405 tasks</span></div>
+              <div class="progress-bar-wrap" style="width:100%"><div class="progress-bar green" style="width:86%"></div></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" style="flex:1;justify-content:center">Manage</button>
+              <button class="btn" style="flex:1;justify-content:center">⚙ Config</button>
+            </div>
+          </div>
+          <div class="chart-card" style="cursor:pointer">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+              <div>
+                <div style="font-size:16px;font-weight:700">Dataset Beta</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">2 annotators · 1 reviewer</div>
+              </div>
+              <span class="badge badge-blue">In Progress</span>
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:12px">🔗 Linked: dataset_beta.xlsx</div>
+            <div style="margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Progress</span><span>120/300 tasks</span></div>
+              <div class="progress-bar-wrap" style="width:100%"><div class="progress-bar orange" style="width:40%"></div></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="btn" style="flex:1;justify-content:center">Manage</button>
+              <button class="btn" style="flex:1;justify-content:center">⚙ Config</button>
+            </div>
+          </div>
+          <div class="chart-card" style="cursor:pointer;border:2px dashed var(--border);box-shadow:none;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;min-height:180px">
+            <div style="font-size:32px;color:var(--muted)">+</div>
+            <div style="font-size:14px;font-weight:600;color:var(--muted)">Create New Project</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPLOYEES -->
+      <div id="page-employees" class="page-section">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;gap:10px">
+          <button class="btn btn-blue">+ Add Employee</button>
+          <button class="btn">Bulk Import</button>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>Employee Directory</h3><input class="search-input" placeholder="🔍  Search..."></div>
+          <table>
+            <thead><tr><th>Employee</th><th>Role</th><th>Projects</th><th>Tasks This Month</th><th>Attendance</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--blue)">PS</div>Priya Sharma<br><span style="font-size:11px;color:var(--muted)">priya@co.com</span></div></td><td>Annotator</td><td>Alpha, Beta</td><td>84</td><td>96%</td><td><span class="badge badge-green">Active</span></td><td><button class="btn" style="padding:4px 10px;font-size:12px">Edit</button></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--orange)">RK</div>Rajan Kumar<br><span style="font-size:11px;color:var(--muted)">rajan@co.com</span></div></td><td>Annotator</td><td>Alpha</td><td>71</td><td>88%</td><td><span class="badge badge-green">Active</span></td><td><button class="btn" style="padding:4px 10px;font-size:12px">Edit</button></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--green)">KP</div>Kiran Patel<br><span style="font-size:11px;color:var(--muted)">kiran@co.com</span></div></td><td><span class="badge badge-purple">Reviewer</span></td><td>Alpha</td><td>42 reviews</td><td>100%</td><td><span class="badge badge-green">Active</span></td><td><button class="btn" style="padding:4px 10px;font-size:12px">Edit</button></td></tr>
+              <tr><td><div class="flex-center"><div class="avatar-sm" style="background:var(--red)">VJ</div>Vijay Joshi<br><span style="font-size:11px;color:var(--muted)">vijay@co.com</span></div></td><td>Annotator</td><td>Beta</td><td>48</td><td>82%</td><td><span class="badge badge-orange">At Risk</span></td><td><button class="btn" style="padding:4px 10px;font-size:12px">Edit</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ALERTS -->
+      <div id="page-alerts" class="page-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div style="font-size:13px;color:var(--muted)">3 unresolved issues requiring attention</div>
+          <button class="btn">Mark All Resolved</button>
+        </div>
+        <div class="alert-list">
+          <div class="alert-item error">
+            <span class="alert-icon">🔴</span>
+            <div class="alert-content">
+              <div class="alert-title">Missing Hold Reason — DS-2041 (Vijay Joshi)</div>
+              <div class="alert-sub">Task marked as Hold but no reason provided. Reminder sent 3x in the last 1.5 hours.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="alert-time">30 min ago</span>
+              <button class="btn btn-blue" style="padding:4px 10px;font-size:12px">Notify Again</button>
+            </div>
+          </div>
+          <div class="alert-item error">
+            <span class="alert-icon">🔴</span>
+            <div class="alert-content">
+              <div class="alert-title">Duplicate Dataset ID — DS-2041</div>
+              <div class="alert-sub">Assigned to both Priya Sharma and Rajan Kumar in Video Annotation Alpha. Conflicting records detected.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="alert-time">5 min ago</span>
+              <button class="btn" style="padding:4px 10px;font-size:12px">Resolve</button>
+            </div>
+          </div>
+          <div class="alert-item warn">
+            <span class="alert-icon">🟡</span>
+            <div class="alert-content">
+              <div class="alert-title">TAT Warning — DS-1987 (Kiran Patel, Reviewer)</div>
+              <div class="alert-sub">Status: Labelling Done · Awaiting review for 3h 20min · Configured TAT: 2h</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="alert-time">1h ago</span>
+              <button class="btn" style="padding:4px 10px;font-size:12px">Escalate</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══════════════════════════════════════
+     SCREEN 3: ANNOTATOR VIEW
+══════════════════════════════════════ -->
+<div id="annotator" class="screen">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">W</div>
+      <span>WorkTrack</span>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">My Work</div>
+      <button class="nav-item active" onclick="showAnnotPage('a-dashboard',this)">
+        <span class="nav-icon">🏠</span> My Dashboard
+      </button>
+      <button class="nav-item" onclick="showAnnotPage('a-tasks',this)">
+        <span class="nav-icon">✅</span> My Tasks
+        <span class="nav-badge">4</span>
+      </button>
+      <button class="nav-item" onclick="showAnnotPage('a-attendance',this)">
+        <span class="nav-icon">🕐</span> Attendance
+      </button>
+      <button class="nav-item" onclick="showAnnotPage('a-quality',this)">
+        <span class="nav-icon">🎯</span> My Quality
+      </button>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-card">
+        <div class="avatar green">PS</div>
+        <div class="user-info">
+          <div class="user-name">Priya Sharma</div>
+          <div class="user-role">Annotator</div>
+        </div>
+      </div>
+      <button class="nav-item" style="margin-top:4px" onclick="showScreen('login')">
+        <span class="nav-icon">🚪</span> Sign Out
+      </button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="annotPageTitle">My Dashboard</div>
+      <div class="topbar-actions">
+        <div class="sync-status"><div class="sync-dot"></div>Synced</div>
+        <button class="btn btn-green" id="breakBtn" onclick="toggleBreak()">☕ Start Break</button>
+        <button class="btn btn-blue">🔔 <span style="background:var(--blue);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 5px;margin-left:2px">2</span></button>
+      </div>
+    </div>
+    <div class="content">
+      <div id="break-widget" style="display:none" class="break-widget">
+        <div class="break-timer" id="breakTimer">00:00</div>
+        <div class="break-info">
+          <div class="break-title">Break in progress</div>
+          <div class="break-sub">Timer running · Click End Break to resume</div>
+        </div>
+        <button class="btn btn-red" onclick="toggleBreak()">⏹ End Break</button>
+      </div>
+
+      <!-- A-DASHBOARD -->
+      <div id="page-a-dashboard" class="page-section active">
+        <div class="my-stats">
+          <div class="my-stat"><div class="my-stat-val" style="color:var(--blue)">84</div><div class="my-stat-lbl">Tasks Done</div></div>
+          <div class="my-stat"><div class="my-stat-val" style="color:var(--green)">94%</div><div class="my-stat-lbl">Approval Rate</div></div>
+          <div class="my-stat"><div class="my-stat-val">23m</div><div class="my-stat-lbl">Avg per Task</div></div>
+          <div class="my-stat"><div class="my-stat-val" style="color:var(--orange)">4</div><div class="my-stat-lbl">Pending Tasks</div></div>
+          <div class="my-stat"><div class="my-stat-val" style="color:var(--green)">7h 12m</div><div class="my-stat-lbl">Working Today</div></div>
+          <div class="my-stat"><div class="my-stat-val">38m</div><div class="my-stat-lbl">Break Today</div></div>
+        </div>
+        <div class="chart-grid" style="margin-bottom:20px">
+          <div class="chart-card">
+            <h3>My Productivity This Week</h3>
+            <div class="bar-chart">
+              <div class="bar-group"><div class="bar" style="height:70%;background:var(--green)"></div><div class="bar-label">Mon<br>14</div></div>
+              <div class="bar-group"><div class="bar" style="height:85%;background:var(--green)"></div><div class="bar-label">Tue<br>18</div></div>
+              <div class="bar-group"><div class="bar" style="height:60%;background:var(--green)"></div><div class="bar-label">Wed<br>12</div></div>
+              <div class="bar-group"><div class="bar" style="height:100%;background:var(--green)"></div><div class="bar-label">Thu<br>21</div></div>
+              <div class="bar-group"><div class="bar" style="height:90%;background:var(--green)"></div><div class="bar-label">Fri<br>19</div></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>My Quality Score</h3>
+            <div style="text-align:center;padding:16px 0">
+              <div style="font-size:52px;font-weight:700;color:var(--green)">94%</div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Approval rate this month</div>
+              <span class="badge badge-green" style="font-size:13px;padding:6px 16px">Grade: A</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A-TASKS -->
+      <div id="page-a-tasks" class="page-section">
+        <div class="filter-bar">
+          <select><option>All Statuses</option><option>Labelling</option><option>Labelling Done</option><option>Hold</option></select>
+          <select><option>Video Annotation Alpha</option></select>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>My Assigned Tasks</h3></div>
+          <table>
+            <thead><tr><th>Dataset ID</th><th>Assigned</th><th>Submitted</th><th>Approved</th><th>Rejected</th><th>Time</th><th>Status</th><th>TAT</th><th>Feedback</th></tr></thead>
+            <tbody>
+              <tr><td><strong>DS-2048</strong></td><td>Oct 14</td><td>Oct 15</td><td style="color:var(--green)">142</td><td style="color:var(--red)">8</td><td>22 min</td><td><span class="badge badge-green">Approved</span></td><td><span class="badge badge-green">✓</span></td><td>—</td></tr>
+              <tr><td><strong>DS-2052</strong></td><td>Oct 15</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="badge badge-blue">Labelling</span></td><td><span class="badge badge-orange">⚠ 4h left</span></td><td>—</td></tr>
+              <tr><td><strong>DS-2053</strong></td><td>Oct 15</td><td>—</td><td>—</td><td>—</td><td>—</td><td><span class="badge badge-gray">Not Started</span></td><td><span class="badge badge-gray">—</span></td><td>—</td></tr>
+              <tr><td><strong>DS-2035</strong></td><td>Oct 12</td><td>Oct 13</td><td>—</td><td style="color:var(--red)">31</td><td>35 min</td><td><span class="badge badge-red">Rejected</span></td><td><span class="badge badge-red">✗</span></td><td style="font-size:12px;color:var(--muted)">Objects unclear, re-annotate</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- A-ATTENDANCE -->
+      <div id="page-a-attendance" class="page-section">
+        <div class="attend-grid">
+          <div class="clock-card">
+            <div class="clock-time" id="liveTime">--:-- --</div>
+            <div class="clock-date" id="liveDate">Friday, October 16, 2026</div>
+            <div class="clock-actions">
+              <button class="btn btn-green">✓ Full Day</button>
+              <button class="btn">½ Half Day</button>
+              <button class="btn btn-red">✗ Leave</button>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Today's Timeline</h3>
+            <div class="timeline">
+              <div class="timeline-item"><div class="timeline-dot green"></div><div class="timeline-text">Logged In</div><div class="timeline-time">09:02 AM</div></div>
+              <div class="timeline-item"><div class="timeline-dot orange"></div><div class="timeline-text">Break Started</div><div class="timeline-time">11:15 AM</div></div>
+              <div class="timeline-item"><div class="timeline-dot blue"></div><div class="timeline-text">Break Ended <span style="color:var(--muted);font-size:12px">(22 min)</span></div><div class="timeline-time">11:37 AM</div></div>
+              <div class="timeline-item"><div class="timeline-dot orange"></div><div class="timeline-text">Break Started</div><div class="timeline-time">01:00 PM</div></div>
+              <div class="timeline-item"><div class="timeline-dot blue"></div><div class="timeline-text">Break Ended <span style="color:var(--muted);font-size:12px">(16 min)</span></div><div class="timeline-time">01:16 PM</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="my-stats" style="grid-template-columns:repeat(4,1fr)">
+          <div class="my-stat"><div class="my-stat-val" style="color:var(--green)">7h 12m</div><div class="my-stat-lbl">Working Today</div></div>
+          <div class="my-stat"><div class="my-stat-val">38m</div><div class="my-stat-lbl">Break Time</div></div>
+          <div class="my-stat"><div class="my-stat-val" style="color:var(--blue)">2</div><div class="my-stat-lbl">Breaks Taken</div></div>
+          <div class="my-stat"><div class="my-stat-val" style="color:var(--green)">96%</div><div class="my-stat-lbl">Monthly Attendance</div></div>
+        </div>
+      </div>
+
+      <!-- A-QUALITY -->
+      <div id="page-a-quality" class="page-section">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-label">Total Submitted</div><div class="stat-value">3,560</div></div>
+          <div class="stat-card"><div class="stat-label">Approved</div><div class="stat-value" style="color:var(--green)">3,350</div><div class="stat-change up">↑ 94% rate</div></div>
+          <div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-value" style="color:var(--red)">210</div></div>
+          <div class="stat-card"><div class="stat-label">Review Rejections</div><div class="stat-value" style="color:var(--orange)">62</div></div>
+        </div>
+        <div class="table-card">
+          <div class="table-header"><h3>Recent Reviewer Feedback</h3></div>
+          <table>
+            <thead><tr><th>Dataset ID</th><th>Reviewer</th><th>Date</th><th>Objects Rejected</th><th>Feedback</th></tr></thead>
+            <tbody>
+              <tr><td><strong>DS-2035</strong></td><td>Kiran Patel</td><td>Oct 13</td><td style="color:var(--red)">31</td><td style="font-size:12px">Objects unclear, bounding boxes need tighter fit</td></tr>
+              <tr><td><strong>DS-1998</strong></td><td>Sneha Rao</td><td>Oct 10</td><td style="color:var(--red)">14</td><td style="font-size:12px">Missing label on background objects</td></tr>
+              <tr><td><strong>DS-1962</strong></td><td>Kiran Patel</td><td>Oct 6</td><td style="color:var(--red)">8</td><td style="font-size:12px">Good work overall, minor edge cases</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Notification Panel -->
+<div class="notif-panel" id="notifPanel">
+  <div class="notif-header">
+    <h3>🔔 Notifications <span style="background:var(--red);color:#fff;border-radius:10px;font-size:11px;padding:2px 7px;margin-left:6px">3</span></h3>
+    <button class="notif-close" onclick="toggleNotif()">✕</button>
+  </div>
+  <div class="notif-list">
+    <div class="notif-item unread">
+      <div class="notif-title">⚠️ Duplicate ID — DS-2041</div>
+      <div class="notif-msg">Assigned to 2 annotators. Action required to resolve conflict.</div>
+      <div class="notif-time">5 min ago</div>
+    </div>
+    <div class="notif-item unread">
+      <div class="notif-title">🕐 TAT Exceeded — DS-1987</div>
+      <div class="notif-msg">Labelling Done status exceeded 2h TAT. Kiran Patel notified.</div>
+      <div class="notif-time">1h ago</div>
+    </div>
+    <div class="notif-item unread">
+      <div class="notif-title">📋 Missing Hold Reason — DS-2041</div>
+      <div class="notif-msg">Vijay Joshi has not provided a reason. Reminder #3 sent.</div>
+      <div class="notif-time">30 min ago</div>
+    </div>
+    <div class="notif-item">
+      <div class="notif-title">✅ Sheets Sync Complete</div>
+      <div class="notif-msg">Video Annotation Alpha synced. 14 new tasks imported.</div>
+      <div class="notif-time">2 min ago</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentRole = 'Admin';
+  let breakActive = false;
+  let breakStart = null;
+  let breakInterval = null;
+
+  function setRole(el, role) {
+    currentRole = role;
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('loginBtn').textContent = 'Sign In as ' + role;
+    document.querySelector('[placeholder="admin@company.com"]').value = role === 'Admin' ? 'admin@company.com' : 'priya@company.com';
+  }
+
+  function doLogin() {
+    if (currentRole === 'Admin') {
+      showScreen('app');
+    } else {
+      showScreen('annotator');
+    }
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showPage(id, el) {
+    document.querySelectorAll('#app .page-section').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('#app .nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    const titles = {dashboard:'Dashboard',tasks:'Tasks',attendance:'Attendance',productivity:'Productivity Reports',quality:'Quality Reports',projects:'Projects',employees:'Employees',alerts:'Alerts & Notifications'};
+    document.getElementById('pageTitle').textContent = titles[id] || id;
+  }
+
+  function showAnnotPage(id, el) {
+    document.querySelectorAll('#annotator .page-section').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    document.querySelectorAll('#annotator .nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+    const titles = {'a-dashboard':'My Dashboard','a-tasks':'My Tasks','a-attendance':'My Attendance','a-quality':'My Quality'};
+    document.getElementById('annotPageTitle').textContent = titles[id] || id;
+  }
+
+  function toggleNotif() {
+    document.getElementById('notifPanel').classList.toggle('open');
+  }
+
+  function toggleBreak() {
+    const widget = document.getElementById('break-widget');
+    const btn = document.getElementById('breakBtn');
+    if (!breakActive) {
+      breakActive = true;
+      breakStart = Date.now();
+      widget.style.display = 'flex';
+      btn.textContent = '⏹ End Break';
+      btn.className = 'btn btn-red';
+      breakInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - breakStart) / 1000);
+        const m = String(Math.floor(elapsed / 60)).padStart(2,'0');
+        const s = String(elapsed % 60).padStart(2,'0');
+        document.getElementById('breakTimer').textContent = m + ':' + s;
+      }, 1000);
+    } else {
+      breakActive = false;
+      clearInterval(breakInterval);
+      widget.style.display = 'none';
+      btn.textContent = '☕ Start Break';
+      btn.className = 'btn btn-green';
+    }
+  }
+
+  // Live clock
+  function updateClock() {
+    const now = new Date();
+    const timeEl = document.getElementById('liveTime');
+    if (timeEl) {
+      timeEl.textContent = now.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // Period tab clicking
+  document.querySelectorAll('.period-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      this.closest('.period-tabs').querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
